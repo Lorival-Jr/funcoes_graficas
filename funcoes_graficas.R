@@ -55,17 +55,16 @@ uni_bar <- function(banco, var, ylab= 'Frequência', xlab = '', color = '#767F8B
       )), stat='identity', fill='white', label.size = label_size)+
     coord_flip()}
   
-  print(ax)
-  
   arquivo <- paste0('img/uni/', var, '.pdf')
   ggsave(arquivo)
-
-  
+  return(ax)
 }
 
 # Gráfico de barras bivariado ---------------------------------------------
 
-bi_bar <- function(banco, x, y, ylab= 'Frequência', xlab = '', label_fill = '', color = c('#767F8B', '#B3B7B8'), label_size = 0.25, order = NULL, flip = F){
+bi_bar <- function(banco, x, y, ylab= 'Frequência', xlab = '', label_fill = '', 
+                   color =  c('#767F8B', '#B3B7B8', '#9FB6CD', '#E5E5E5','#6E7B8B', '#7C878E'),
+                   order = NULL, flip = F, capitalize = T){
   
   banco <- banco[banco[x] != '' & banco[y] != '',][,c(x,y)]
   prim.maiuscula <- function(x) {
@@ -73,9 +72,10 @@ bi_bar <- function(banco, x, y, ylab= 'Frequência', xlab = '', label_fill = '',
     substr(x, 1, 1) <- toupper(substr(x, 1, 1))
     x
   }
-  
-  if(typeof(banco[3,x]) == 'character') {banco[x] <- sapply(banco[x], FUN = prim.maiuscula)}
-  if(typeof(banco[3,y]) == 'character') {banco[y] <- sapply(banco[y], FUN = prim.maiuscula)}
+  if(capitalize == T){
+    if(typeof(banco[3,x]) == 'character') {banco[x] <- sapply(banco[x], FUN = prim.maiuscula)}
+    if(typeof(banco[3,y]) == 'character') {banco[y] <- sapply(banco[y], FUN = prim.maiuscula)}
+  }
   
   if(!is.null(order))
   {banco[x] <- fct_relevel(factor((banco[[x]]), levels=order))}
@@ -85,7 +85,7 @@ bi_bar <- function(banco, x, y, ylab= 'Frequência', xlab = '', label_fill = '',
   
   if(flip == F)
   { 
-      ax <- ggplot(banco, aes(x = .data[[x]], y = Freq, fill = .data[[y]])) + 
+    ax <- ggplot(banco, aes(x = .data[[x]], y = Freq, fill = .data[[y]])) + 
       geom_bar( stat='identity', position =  "dodge") + 
       theme_minimal()+
       labs(x= xlab, y = 'Frequência', fill = label_fill) + 
@@ -101,7 +101,7 @@ bi_bar <- function(banco, x, y, ylab= 'Frequência', xlab = '', label_fill = '',
       theme_minimal()
     
   }
-    
+  
   else if(flip == T)
   {     ax <- ggplot(banco, aes(x = .data[[x]], y = Freq, fill = .data[[y]])) + 
     geom_bar( stat='identity', position =  "dodge") + 
@@ -113,20 +113,18 @@ bi_bar <- function(banco, x, y, ylab= 'Frequência', xlab = '', label_fill = '',
         '%d (%s)',
         Freq,
         pct_format((Freq / sum(Freq)))
-      ), group = y), position = position_dodge2(width = 0.9, ),
+      ), group = y), position = position_dodge2(width = 0.9 ),
       size=2.5,hjust= 0.5, col = "black", fill='white')+
     scale_fill_manual(values=color,)+
     theme_minimal()+
     coord_flip()+
     guides(fill = guide_legend(reverse = TRUE))}
   
-  print(ax)
-  
   arquivo <- paste0('img/bi/', x, 'X', y, '.pdf')
   ggsave(arquivo, dpi = 500)
-  
-  
+  return(ax)
 }
+
 
 
 # Boxplot -----------------------------------------------------------------
@@ -146,28 +144,17 @@ uni_boxplot <- function(banco, var, xlab= '', ylab = '', color = '#767F8B', flip
     banco[var] <- sapply(banco[var], FUN = prim.maiuscula)
   }
   
-  if(flip == F)
-  { 
-    ax <- ggplot(banco, aes(x = '', y = .data[[var]])) + 
+  ax <- ggplot(banco, aes(x = '', y = .data[[var]])) + 
     stat_boxplot(geom='errorbar', linetype=1, width=0.25)+
     geom_boxplot(fill = color) +
     theme_minimal()+
-    labs(x= xlab, y = ylab) }
-    
-  else if(flip == T)
-  {     
-    ax <- ggplot(banco, aes(x = '', y = .data[[var]])) + 
-    stat_boxplot(geom='errorbar', linetype=1, width=0.25)+
-    geom_boxplot(fill = color) +
-    theme_minimal()+
-    labs(x= xlab, y = ylab) +
-    coord_flip() }
+    labs(x= xlab, y = ylab)
   
-  print(ax)
+  if(flip == T){ax <- ax+coord_flip()}
   
   arquivo <- paste0('img/uni/', var, '.pdf')
   ggsave(arquivo)
-  
+  return(ax)
 }
 
 
@@ -203,12 +190,9 @@ bi_boxplot <- function(banco, x, y, xlab= '', ylab = '', color = '#767F8B', flip
       theme_minimal()+
       labs(x= xlab, y = ylab) +
       coord_flip() }
-  
-  print(ax)
-  
   arquivo <- paste0('img/bi/', x, 'X', y, '.pdf')
   ggsave(arquivo)
-  
+  return(ax)
 }
 
 
@@ -237,12 +221,11 @@ histograma <- function(banco, var, xlab= '', ylab = 'Frequência', color = '#767
       theme_minimal()+
       labs(x= xlab, y = ylab) 
   }
-    
-  print(ax)
-  
+
   arquivo <- paste0('img/uni/', var, '.pdf')
   ggsave(arquivo)
   
+  return(ax)
 }
 
 
@@ -304,11 +287,36 @@ bi_bar2 <- function(banco, x, y, ylab= 'Frequência', xlab = '', label_fill = ''
     theme_minimal()+
     coord_flip()+
     guides(fill = guide_legend(reverse = TRUE))}
-  
-  print(ax)
-  
+
   arquivo <- paste0('img/bi/', x, 'X', y, '.pdf')
   ggsave(arquivo)
   
+  return(ax)
+}
+
+
+# Scatterplot -------------------------------------------------------------
+
+scatterplot <- function(banco, x, y, xlab = '', ylab = '', reg = F, size = 1.7,  color = '#000000')
+{
+  
+  formato <- theme(                                                       
+    plot.title = element_text(size = 14, hjust = 0.5),
+    axis.title.y = element_text(size = 12, vjust = 0.5, angle= 0),
+    axis.title.x = element_text(size = 12, vjust = -0.2),
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 10)
+  )
+  
+  ax <- ggplot(banco, aes(x = .data[[x]], y = .data[[y]])) +
+    geom_point(alpha = 0.9, size = size)+
+    labs(x = xlab, y = ylab)+
+    theme_minimal()+
+    formato
+  if(reg){ ax <- ax + geom_smooth(method = 'lm', se = F, col = 'red')}
+  return(ax)
   
 }
+
+
+
